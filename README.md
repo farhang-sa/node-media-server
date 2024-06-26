@@ -11,7 +11,3 @@
 1. clone : <code>git clone https://github.cpm/farhang-sa/node-socket-server</code>
 2. build : <code>npm install</code>
 3. start : <code>npm start</code>
-
-#
-# how it works
-<p><code>npm start</code> will </p>
