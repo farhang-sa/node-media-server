@@ -1,13 +1,17 @@
 # Node Socket Server
-
-what is app do :
 1. Online Radio & Tv
 2. WebRTC peer2peer Calls
 
-live demo :
-
+# requirements 
+1. nodejs v18
+2. nodemon ( <code>npm i -g nodemon</code> )
+3. webpack ( <code>npm i -g webpack</code> )
 
 # installing
 1. clone : <code>git clone https://github.cpm/farhang-sa/node-socket-server</code>
 2. build : <code>npm install</code>
 3. start : <code>npm start</code>
+
+#
+# how it works
+<p><code>npm start</code> will </p>
