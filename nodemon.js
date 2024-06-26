@@ -2,12 +2,13 @@ var nodemon  = require('nodemon');
 var { exec } = require('child_process');
 
 nodemon({
-  	script: 'server.js',
+  	script: 'socket-server.js',
   	ext: 'js jsx json css scss' ,
   	ignore : [
 	    ".git",
 		"./nodemon.js",
 		"./server.js",
+		"./socket-server.js",
 		"./webpack.config.js",
 		"./dist/*" ,
 	    "./dist/scripts/app.bundle.js"

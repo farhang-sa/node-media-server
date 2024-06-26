@@ -1,83 +1,62 @@
-const { createServer } = require('node:http');
+// imports
+const https = require( 'https' );
+const socket = require( 'socket.io' )
+const path = require( 'path' );
+const fs = require( 'fs' );
+const expressClass = require( 'express' );
+const cors = require( 'cors' );
 
-const hostname = '127.0.0.1';
-const port = process.env.PORT || 3000;
 const root = __dirname ;
-const pa = require('path');
-const fs = require('fs');
+const hostname = process.env.IP
+    || '192.168.99.174' ; //'192.168.1.5'; // My Laptop On My Home Network
+const port = process.env.PORT || 3000;
 
-const server = createServer((req, res) => {
+/*
+	Note :
+	Camera & Mic permissions only work when we are secure ( HTTPS )
+	so we will create HTTPS server ( NOT HTTP )
+*/
 
-	let url = req.url ;
+// HTTPS Cert & Key created according to this answer on Stackoverflow :
+// https://stackoverflow.com/questions/23001643/how-to-use-https-with-node-js
+let httpsOptions = {
+    key  : fs.readFileSync( path.join( root , 'server-key.pem') ) ,
+    cert : fs.readFileSync( path.join( root , 'server-crt.pem') )
+};
 
-	if( url === "/" ){
-	  	res.statusCode = 200;
-	 	res.setHeader('Content-Type', 'text/html');
-		res.write( fs.readFileSync( pa.join( root , "index.html" ) ) );
-		res.end();
-	} else {
-		let ext = pa.extname( url );
-		let mat = {
-			".css" 	: "text/css" ,
-			".js" 	: "text/javascript" ,
-			".png" 	: "image/png" ,
-			".jpg" 	: "image/jpg" ,
-			".jpeg" : "image/jpeg" ,
-			".svg"  : "image/svg+xml" ,
-			".mp3" 	: "audio/mp3" ,
-			".mp4" 	: "video/mp4" ,
-		}; let mime = "" ;
-		for( let exn in mat ){
-			if( exn === ext )
-				mime = mat[exn] ;
-		} if( mime !== "" ){
-			res.setHeader('Content-Type', mime );
-			if( mime.indexOf( "audio" ) >= 0 || mime.indexOf( "video" ) >= 0 ){
-				// Video And Audio Range Handling
-				let file = pa.join( root , url );
-				fs.stat(file, function(err, stats) {
-					if (err) {
-						if (err.code === 'ENOENT') {
-							// 404 Error if file not found
-							return res.sendStatus(404);
-						}
-						return res.end(err);
-					}
+// Create Express server middleware
+const express = expressClass();
+express.use( cors() );
+express.use( "/dist" , expressClass.static( path.join( root , "/dist" ) ) );
+express.get('/', (req, res) => {
+    res.sendFile( path.join( root , './dist/index.html' ) );
+});
 
-					let range = req.headers.range;
-					if (!range) {
-						// 416 Wrong range
-						return res.statusCode(416);
-					}
+// Create HTTPS server ( uses express as middleware )
+const server = https.createServer( httpsOptions , express );
 
-					var positions = range.replace(/bytes=/, "").split("-");
-					var start = parseInt(positions[0], 10);
-					var total = stats.size;
-					var end = positions[1] ? parseInt(positions[1], 10) : total - 1;
-					var chunksize = (end - start) + 1;
+// Create socket server with Cross-Origin options
+const ioServer = socket( server , {
+    cors: {
+        origin: hostname , // Only answer to this origin :)
+        methods: ["GET", "POST", "DELETE"]
+    }
+});
 
-					res.setHeader("Content-Range", "bytes " + start + "-" + end + "/" + total);
-					res.setHeader("Accept-Ranges", "bytes");
-					res.setHeader("Content-Length", chunksize);
-
-					var stream = fs.createReadStream(file, {start: start, end: end})
-						.on("open", function () {
-							stream.pipe(res);
-						}).on("error", function (err) {
-							res.end(err);
-						});
-				});
-				return;
-			} res.write( fs.readFileSync( pa.join( root , url ) ) );
-			res.end();
-		} else {
-			res.setHeader('Content-Type', "text/html" );
-			res.end( '404 : File Not Found - OR - Mime Not Listed' );
-		}
-	}
-
+// this is the socket server
+ioServer.on("connection", (socket) => {
+    socket.emit("me", socket.id);
+    socket.on("disconnect", () => {
+        socket.broadcast.emit("callEnded")
+    });
+    socket.on("callUser", ({ userToCall, signalData, from, name }) => {
+        ioServer.to(userToCall).emit("callUser", { signal: signalData, from, name });
+    });
+    socket.on("answerCall", (data) => {
+        ioServer.to(data.to).emit("callAccepted", data.signal)
+    });
 });
 
 server.listen(port, hostname, () => {
-  console.log(`Server running at http://${hostname}:${port}/`);
+    console.log(`Server running at https://${hostname}:${port}/`);
 });
