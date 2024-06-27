@@ -18,7 +18,7 @@ import {hostname, port} from "./components/hostPort";
 
 window.$ = $ ;
 window.React = React;
-window.getCookies = () => {
+window.getMySid = () => {
 	let cookies = document.cookie.split(';');
 	for( let i = 0; i < cookies.length ; i++ ){
 		let cookie = decodeURIComponent( cookies[i] );
@@ -26,6 +26,11 @@ window.getCookies = () => {
 		if( spl[0] === "sid" )
 			return cookie.replace( "sid=" , "" );
 	} return null ;
+}
+window.getNumber = () => {
+	let sid = window.getMySid();
+	sid = sid.split( "_" );
+	return sid[1] ;
 }
 window.socket = io(hostname + ':' + port );
 
@@ -38,16 +43,6 @@ const SocketTvRoute = () =>
 	<IOContextProvider>
 		<SocketTV />
 	</IOContextProvider>
-
-const WebRTCVoiceCall = () =>
-	<P2PContextProvider>
-		<P2PVoice />
-	</P2PContextProvider>
-
-const WebRTCVideoCall = () =>
-	<P2PContextProvider>
-		<P2PVideo />
-	</P2PContextProvider>
 
 const root = createRoot( document.getElementById( 'app-view' ) );
 root.render(

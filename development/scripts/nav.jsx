@@ -33,18 +33,18 @@ const Nav = () =>
                 </li>
                 <li className="nav-item">
                     <Link to="p2p-voice" className="nav-link">
-                        <span data-bs-target="#myNavbarNav" data-bs-toggle="collapse">Voice Call</span>
+                        <span data-bs-target="#myNavbarNav">Voice Call</span>
                     </Link>
                 </li>
                 <li className="nav-item">
                     <Link to="p2p-video" className="nav-link">
-                        <span data-bs-target="#myNavbarNav" data-bs-toggle="collapse">Video Call</span>
+                        <span data-bs-target="#myNavbarNav">Video Call</span>
                     </Link>
                 </li>
             </ul>
         </div>
         <div className="ms-3 me-1">
-            <a href="https://github.com/farhang-sa/node-socket-server"
+            <a href="https://github.com/farhang-sa/node-media-server"
                className="p-2 gitub-link" target="_blank">
                 <img src={GitLogo} style={{width: 35, height: 35}}
                      alt="github icon"

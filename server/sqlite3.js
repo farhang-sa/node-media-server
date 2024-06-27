@@ -31,19 +31,21 @@ class AppSqlite extends Sqlite3DataBase {
         let init = util.getUIDStamp( sessionId ); // stamp
 
         let exist = `SELECT * FROM sockets WHERE ssid='${sessionId}' OR io='${socketId}'` ;
-        this.db.get( exist , ( err , row ) => {
-            if( !row ){ // Not Found
-                let sql = "INSERT INTO sessions( 'ssid' , 'io' , 'init' )";
-                sql += `VALUES ( '${sessionId}' , '${socketId}' , '${init}' );` ;
+        this.db.get( exist , ( err , raw ) => {
+            //console.log( "new : " + sessionId + " | " + socketId );
+            if( !raw ){ // Not Found
+                let sql = "INSERT INTO sockets( 'ssid' , 'io' , 'init' )";
+                sql += ` VALUES ( '${sessionId}' , '${socketId}' , '${init}' );` ;
                 this.db.exec( sql , () => callback && callback() );
             } else { // Exists!
-                if( row.io === socketId && row.ssid !== sessionId )
+                //console.log( "old : " + raw.ssid + " | " + raw.io );
+                if( raw.io === socketId && raw.ssid !== sessionId )
                     // Some One Else Using This SocketId
-                    this.destroySocket( row.ssid ,
+                    this.destroySocket( raw.ssid ,
                         () => this.addSocket( sessionId ,socketId ) );
-                else if( row.io === socketId && row.ssid === sessionId )
+                else if( raw.io !== socketId && raw.ssid === sessionId )
                     // Some One Else Using This SocketId
-                    this.destroySocket( row.ssid ,
+                    this.destroySocket( raw.ssid ,
                         () => this.addSocket( sessionId ,socketId ) );
                 /** :)
                 else if( row.io === socketId && row.ssid === sessionId )
@@ -68,8 +70,23 @@ class AppSqlite extends Sqlite3DataBase {
         });
     }
 
+    getSocketByPartial( sessionPartial , callback ){
+        let query = `SELECT * FROM sockets WHERE ssid LIKE '%${sessionPartial}%'` ;
+        this.db.get( query , ( err , row ) => {
+            if( err || !row ){
+                //console.log( "Get Error : " + err );
+                callback( null );
+            } else {
+                //console.log( row.data );
+                callback( row ) ;
+            }
+        });
+    }
+
     destroySocket(sessionId, callback) {
-        this.db.exec( `DELETE FROM sockets WHERE ssid='${sessionId}'` , () => callback && callback() );
+        let sql = `DELETE FROM sockets WHERE ssid='${sessionId}'` ;
+        //console.log( "delete sql : " + sessionId );
+        this.db.exec( sql , () => callback && callback() );
     }
 
     removeExpiredSockets() {

@@ -6,79 +6,117 @@ const P2PContextProvider = ({ children }) => {
 
     const [mySocketId, setMySocketId] = useState('');
     const [name, setName] = useState('');
+    const [number, setNumber] = useState('');
+
+    const [contactFound, setContactFound] = useState( 0 );
+    const [contactId, setContactId] = useState( '' );
+    const [contactIO, setContactIO] = useState( '' );
+    const [contactStream, setContactStream] = useState();
+
     const [stream, setStream] = useState();
 
+    const [callStatus, setCallStatus] = useState('');
     const [callAccepted, setCallAccepted] = useState(false);
     const [callEnded, setCallEnded] = useState(false);
     const [call, setCall] = useState({});
 
-    const contactStream = useRef();
     const connectionRef = useRef();
 
+    useEffect(() => {
+
+        window.socket.on('setSocketId', ( id ) => {
+            setMySocketId( id );
+        });
+        window.socket.on('callReceive', ({ from, callerName , number , signal }) => {
+            setCall({ isReceivingCall: true, from , name: callerName , number , signal });
+        });
+
+        window.socket.emit( "setSessionId" , { sid : window.getMySid() });
+
+    }, [] );
+
     const startMic = ( callback ) => {
-        stopStreaming();
+        stopStreaming( stream );
         navigator.mediaDevices.getUserMedia({ audio: true })
-            .then((currentStream) => {
-                console.log( "Streaming Audio" );
-                setStream( currentStream );
-                callback( currentStream );
+            .then((micStream) => {
+                console.log( "streaming mic audio" );
+                //setStream( micStream );
+                callback( micStream );
             });
     }
 
-    const startVideo = ( callback ) => {
-        stopStreaming();
+    const startCam = (callback ) => {
+        stopStreaming( stream );
         navigator.mediaDevices.getUserMedia({ video: true , audio: true })
-            .then((currentStream) => {
-                console.log( "Streaming Video" );
-                setStream( currentStream );
-                callback( currentStream );
+            .then((camAndMicStream) => {
+                console.log( "streaming cam video" );
+                //setStream( camAndMicStream );
+                callback( camAndMicStream );
             });
     }
 
     const stopStreaming = ( stream ) => {
-        if( ! stream || ! stream.getTracks() )
+        if( ! stream || ! stream.getTracks() ){
+            console.log( "no previous streaming" );
             return ;
-        let vc = stream.getTracks().length ;
-        console.log( "Stopping Streaming : " + vc );
+        } let vc = stream.getTracks().length ;
+        console.log( "stopping streaming : " + vc );
         if( vc <= 0)
             return ;
-        for( let v = 0 ; v <= vc.length - 1; v++ ){
-            console.log( v + " - " + stream.getTracks()[v] );
-            stream.getTracks()[v].stop();
-        }
+        stream.getTracks().forEach(function(track) {
+            console.log( "track stop : " + track.id );
+            track.stop();
+        });
     }
 
-    useEffect(() => {
-
-        window.socket.on('me', ( id ) => setMySocketId(id) );
-        window.socket.on('callUser', ({ from, name: callerName, signal }) => {
-            setCall({ isReceivingCall: true, from, name: callerName, signal });
+    const startCalling = ( contactNumber ) => {
+        setContactId( contactNumber );
+        setContactFound( 2 ); // Searching !
+        window.socket.on( 'foundContactIO', ( io ) => {
+            console.log( 'contact io : ' + io );
+            if( mySocketId === io ){
+                console.log( 'contacting yourself !' );
+                setContactIO( '' );
+                setContactFound( -1 );
+                return ;
+            } // else :
+            setContactFound( 1 );
+            setContactIO( io );
+            callUser( io , mySocketId , name );
         });
+        window.socket.on( 'noContactIO', ( cid ) => {
+            console.log( 'contact not found : ' + cid );
+            setContactIO( '' );
+            setContactFound( -1 );
+        });
+        window.socket.emit( 'getContactIO'  , { cid : contactNumber });
+    }
 
-    }, [] );
-
-    const answerCall = () => {
+    const answerCall = ( call ) => {
         setCallAccepted(true);
         const peer = new Peer({ initiator: false, trickle: false, stream });
         peer.on('signal', (data) => {
-            window.socket.emit('answerCall', { signal: data, to: call.from });
+            window.socket.emit('answerCall',
+                { signal: data, to : call.from , from : mySocketId , name , number });
         });
-        peer.on('stream', (currentStream) => {
-            contactStream.current.srcObject = currentStream;
+        peer.on('stream', ( peerStream ) => {
+            setContactStream( peerStream );
         });
-        peer.signal(call.signal);
+        peer.signal( call.signal );
         connectionRef.current = peer;
     };
 
-    const callUser = (id) => {
+    const callUser = ( contactIO ) => {
         const peer = new Peer({ initiator: true, trickle: false, stream });
         peer.on('signal', (data) => {
-            window.socket.emit('callUser', { userToCall: id, signalData: data, from: mySocketId, name });
+            window.socket.emit('callUser', {
+                userToCall: contactIO , signalData: data, from : mySocketId, name , number : window.getNumber() });
         });
-        peer.on('stream', (currentStream) => {
-            contactStream.current.srcObject = currentStream;
+        peer.on('stream', (peerStream) => {
+            setContactStream( peerStream );
         });
-        window.socket.on('callAccepted', (signal) => {
+        window.socket.on('callAccepted', ({ signal , from , cName , cNumber }) => {
+            setCall({ from , name: cName , number : cNumber , signal } );
             setCallAccepted(true);
             peer.signal(signal);
         });
@@ -96,13 +134,22 @@ const P2PContextProvider = ({ children }) => {
             call,
             callAccepted,
             contactStream,
+            contactFound ,
+            contactId ,
+            contactIO ,
             stream,
+            setStream ,
+            number ,
+            setNumber ,
             name,
             setName,
             callEnded,
             mySocketId,
+            callStatus ,
+            setCallStatus ,
+            startCalling ,
             stopStreaming ,
-            startVideo ,
+            startCam ,
             startMic ,
             callUser,
             leaveCall,

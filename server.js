@@ -101,8 +101,8 @@ express.get( '/io', (req, res) => {
 // Certificate & Key created according to this answer on Stackoverflow :
 // https://stackoverflow.com/questions/23001643/how-to-use-https-with-node-js
 let httpsOptions = {
-    key  : fs.readFileSync( path.join( root , 'server-key.pem') ) ,
-    cert : fs.readFileSync( path.join( root , 'server-crt.pem') )
+    key  : fs.readFileSync( path.join( root , 'server-cert.key') ) ,
+    cert : fs.readFileSync( path.join( root , 'server-cert.crt') )
 };
 
 // Https server ( express as middleware )
@@ -119,22 +119,32 @@ const ioServer = socket( server , {
 // Socket server magic :)
 ioServer.on( "connection" , (socket) => {
 
-    socket.emit( "io" , socket.id );
-    socket.emit( "me" , socket.id );
-
-    socket.on( "setSessionId" , ({sid }) => {
-        console.log( socket.id + " | " + sid );
+    socket.on( "setSessionId" , ({ sid }) => {
+        // find my session - add/update
+        AppSqlite.addSocket( sid , socket.id , () => {});
+        // send back my new socket id
         socket.emit( "setSocketId" , socket.id );
+        console.log( "new record : " + socket.id + " | " + sid );
+    });
+
+    socket.on( "getContactIO" , ({ cid }) => {
+        AppSqlite.getSocketByPartial( cid , ( raw ) => {
+            if( raw ){ // Contact is online
+                socket.emit( "foundContactIO" , raw.io );
+            } else { // No contact found
+                socket.emit( "noContactIO" , cid );
+            }
+        });
     });
 
     socket.on("disconnect", () => {
         socket.broadcast.emit("callEnded")
     });
-    socket.on("callUser", ({ userToCall, signalData, from, name }) => {
-        ioServer.to(userToCall).emit("callUser", { signal: signalData, from, name });
+    socket.on("callUser", ({ userToCall, signalData, from, name , number }) => {
+        ioServer.to(userToCall).emit("callReceive", { signal: signalData, from , number , callerName : name });
     });
-    socket.on("answerCall", (data) => {
-        ioServer.to(data.to).emit("callAccepted", data.signal)
+    socket.on("answerCall", ({ signal , to , name , number , from }) => {
+        ioServer.to(to).emit("callAccepted", { signal , from , cNumber : number , cName : name });
     });
 });
 
