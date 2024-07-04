@@ -8,6 +8,8 @@
 3. webpack ( <code>npm i -g webpack</code> )
 
 # installing
-1. clone : <code>git clone https://github.cpm/farhang-sa/node-media-server</code>
-2. build : <code>npm install</code>
-3. start : <code>npm start</code>
+1. clone <code>git clone https://github.cpm/farhang-sa/node-media-server</code>
+2. build with <code>npm install</code>
+3. edit <code>server.js</code> and put your own ip & port
+4. edit <code>app.js</code> and put your own ip & port
+5. start <code>npm start</code>
