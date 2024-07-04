@@ -10,6 +10,10 @@
 # database
 *.db
 
+# ssl
+server-cert.crt
+server-cert.key
+
 # testing
 /coverage
 

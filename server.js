@@ -7,8 +7,8 @@ const cors = require( 'cors' );
 const Sessions = require( 'express-session' );
 const sqliteStoreFactory = require( 'express-session-sqlite' ).default ;
 
-const util = require( "./server/util" );
-const AppSqlite = require( "./server/sqlite3" );
+const util = require( "./src/server/util.js" );
+const AppSqlite = require( "./src/server/sqlite3.js" );
 
 // Variables
 const hostname = process.env.IP
@@ -78,12 +78,14 @@ express.post( '/io', (req, res) => {
         });
     });
 });
+
+// testing : session id => socket connection id
 express.get( '/io', (req, res) => {
     express.initUser( req , res );
     AppSqlite.getSocket( req.session.id , (  socketRow ) => {
         if( !socketRow ){
             res.json({
-                "failed" : 1
+                "failed" : "no socket entry found for your session"
             });
         } else res.json({
             "message" : "welcome : " + socketRow.ssid ,
@@ -95,9 +97,10 @@ express.get( '/io', (req, res) => {
 /**
  * @Creating-Server
  * Camera & Mic permissions only work when we are secure ( HTTPS )
- * so we will create HTTPS server ( NOT HTTP )
+ * so we will create "HTTPS" server to meet the security requirements
  **/
 
+// more info :
 // Certificate & Key created according to this answer on Stackoverflow :
 // https://stackoverflow.com/questions/23001643/how-to-use-https-with-node-js
 let httpsOptions = {
@@ -111,8 +114,8 @@ const server = https.createServer( httpsOptions , express );
 // Socket server with Cross-Origin options
 const ioServer = socket( server , {
     cors: {
-        origin: hostname , // Only answer to this origin :)
-        methods: ["GET", "POST", "DELETE"]
+        origin: hostname , // Only answer to this origin
+        methods: ["GET", "POST" ]
     }
 });
 
@@ -137,6 +140,7 @@ ioServer.on( "connection" , (socket) => {
         });
     });
 
+    // p2p call functions
     socket.on("disconnect", () => {
         socket.broadcast.emit("callEnded")
     });
@@ -146,6 +150,59 @@ ioServer.on( "connection" , (socket) => {
     socket.on("answerCall", ({ signal , to , name , number , from }) => {
         ioServer.to(to).emit("callAccepted", { signal , from , cNumber : number , cName : name });
     });
+
+    // radio/tv functions
+    socket.on( "radio_mic" , ( channelid ) =>{
+
+    });
+    socket.on( "radio_audio" , ( channelid ) =>{
+
+    });
+    socket.on( "tv_cam" , ( channelid ) =>{
+
+    });
+    socket.on( "tv_video" , ( channelid ) =>{
+
+    });
+
+});
+
+// for streaming radio/tv
+express.get("/stream/radio/:channel", (req, res) => {
+
+    // add new listener
+    const { id, client } = queue.addClient();
+
+    res.set({
+        "Content-Type": "audio/mp3" ,
+        "Transfer-Encoding": "chunked",
+    }).status(200);
+
+    client.pipe( res );
+
+    req.on("close", () => {
+        queue.removeClient(id);
+    });
+
+});
+
+// for streaming radio/tv
+express.get("/stream/tv/:channel", (req, res) => {
+
+    // add new listener
+    const { id, client } = queue.addClient();
+
+    res.set({
+        "Content-Type": "video/mp4" ,
+        "Transfer-Encoding": "chunked",
+    }).status(200);
+
+    client.pipe( res );
+
+    req.on("close", () => {
+        queue.removeClient(id);
+    });
+
 });
 
 server.listen(port, hostname, () => {

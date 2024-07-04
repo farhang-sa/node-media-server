@@ -5,9 +5,8 @@
   "author": "Farhang Saeedi",
   "license": "MIT",
   "scripts": {
-    "build": "webpack --mode production",
-    "start": "node nodemon.js",
-    "serv": "node server.js"
+    "build": "webpack --mode production -c webpack.config.js webpack.config.server.js",
+    "start": "node nodemon.js"
   },
   "devDependencies": {
     "@babel/preset-env": "^7.24.7",
@@ -23,10 +22,13 @@
     "webpack-cli": "^5.1.4"
   },
   "dependencies": {
+    "@dropb/ffprobe": "^3.0.0",
     "cors": "^2.8.5",
     "express": "^4.19.2",
     "express-session": "^1.18.0",
     "express-session-sqlite": "^2.1.1",
+    "ffprobe-static": "^3.1.0",
+    "jnaudiostream": "^1.0.2",
     "jquery": "^3.7.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -37,6 +39,8 @@
     "simple-peer": "^9.11.1",
     "socket.io": "^4.7.5",
     "socket.io-client": "^4.7.5",
-    "sqlite3": "^5.1.7"
+    "sqlite3": "^5.1.7",
+    "throttle": "^1.0.3",
+    "uuid": "^10.0.0"
   }
 }

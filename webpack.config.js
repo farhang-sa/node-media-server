@@ -2,8 +2,10 @@ var webpack = require("webpack");
 var path = require('path');
 
 module.exports = {
+	// default:
+	//target: 'browser' ,
 	entry: {
-	    main: path.resolve(__dirname, "./development/scripts/app.js" ),
+	    react_app : path.resolve(__dirname, "./src/scripts/app.js" ),
   	},
 	output: {
 	    path: path.resolve(__dirname, './dist/scripts'),
@@ -13,9 +15,9 @@ module.exports = {
   	devServer : {
   		/*devMiddleware: { 
   			writeToDisk: true 
-  		} ,*/
+  		} ,
   		static: './' ,
-  		port : 3000
+  		port : 3000*/
   	} ,
 	module: {
 	    rules: [
