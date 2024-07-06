@@ -5,6 +5,10 @@ const IOBContextProvider = ({ children }) => {
 
     const [listeningStatus, setListeningStatus] = useState("Not Listening" );
 
+    useEffect(() => {
+        console.log( "effect iob" );
+    }, []);
+
     return (
         <IOBContext.Provider value={{
             listeningStatus

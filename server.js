@@ -172,6 +172,7 @@ express.get("/stream/radio/:channel", (req, res) => {
 
     // add new listener
     const { id, client } = queue.addClient();
+    console.log( "stream radio init" )
 
     res.set({
         "Content-Type": "audio/mp3" ,
@@ -191,6 +192,7 @@ express.get("/stream/tv/:channel", (req, res) => {
 
     // add new listener
     const { id, client } = queue.addClient();
+    console.log( "stream tv init" )
 
     res.set({
         "Content-Type": "video/mp4" ,

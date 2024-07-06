@@ -1,6 +1,6 @@
 import React from 'react' ;
 import {createRoot} from "react-dom/client";
-import {HashRouter , Route , Routes } from "react-router-dom";
+import { HashRouter, Route, Routes} from "react-router-dom";
 import {io} from "socket.io-client";
 import $ from 'jquery' ;
 
@@ -16,6 +16,7 @@ import {P2PContextProvider} from "./components/p2pContext";
 import {IOBContextProvider} from "./components/iobContext";
 
 import {hostname, port} from "./components/hostPort";
+import {AppContextProvider} from "./components/appContext";
 
 window.$ = $ ;
 window.React = React;
@@ -35,40 +36,89 @@ window.getNumber = () => {
 }
 window.socket = io(hostname + ':' + port );
 
-const IOBContextProvidedRadio = () =>
-	<IOBContextProvider>
-		<SocketRadio />
-	</IOBContextProvider>
-
-const IOBContextProvidedTv = () =>
-	<IOBContextProvider>
-		<SocketTV />
-	</IOBContextProvider>
-
-const P2PContextProvidedVoice = () =>
-	<P2PContextProvider>
-		<P2PVoice />
-	</P2PContextProvider>
-
-const P2PContextProvidedVideo = () =>
-	<P2PContextProvider>
-		<P2PVideo />
-	</P2PContextProvider>
-
-
 const root = createRoot( document.getElementById( 'app-view' ) );
+
+/* Context Provider Solution 1 : wont show render!
+const IOBRouter = createHashRouter([
+	<Route path="/socket-radio" element={<SocketRadio />} /> ,
+	<Route path="/socket-tv" element={<SocketTV />} /> ,
+]);
+
+const P2PRouter = createHashRouter([
+	<Route path="/" element={ HomePage }  /> ,
+	<Route path="/p2p-voice" element={<P2PVoice />} /> ,
+	<Route path="/p2p-video" element={<P2PVideo />} />
+]);
+
+root.render(
+	<>
+		<P2PContextProvider router={P2PRouter} />
+		<IOBContextProvider router={IOBRouter} />
+	</>
+);*/
+
+/* Context Provider Solution 2 : works find!
+root.render(
+	<P2PContextProvider>
+		<IOBContextProvider>
+			<HashRouter basename={window.baseName}>
+				<Header />
+				<div className="p-2" style={{minHeight:250}}>
+				<Routes>
+					<Route path="/" element={<HomePage />} />
+					<Route path="/socket-radio" element={<SocketRadio />} />
+					<Route path="/socket-tv" element={<SocketTV />} />
+					<Route path="/p2p-voice" element={<P2PVoice />} />
+					<Route path="/p2p-video" element={<P2PVideo />} />
+				</Routes>
+				</div>
+				<Footer />
+			</HashRouter>
+		</IOBContextProvider>
+	</P2PContextProvider>
+ );*/
+
+/* Context Provider Solution 3 : wont work ;
+const P2PProviderElement = ({ children }) =>
+	<P2PContextProvider>{children}</P2PContextProvider>
+
+const IOBProviderElement = ({ children }) =>
+	<IOBContextProvider>{children}</IOBContextProvider>
+
 root.render(
 	<HashRouter basename={window.baseName}>
 		<Header />
 		<div className="p-2" style={{minHeight:250}}>
 			<Routes>
 				<Route path="/" element={<HomePage />} />
-				<Route path="/socket-radio" element={<IOBContextProvidedRadio />} />
-				<Route path="/socket-tv" element={<IOBContextProvidedTv />} />
-				<Route path="/p2p-voice" element={<P2PContextProvidedVoice />} />
-				<Route path="/p2p-video" element={<P2PContextProvidedVideo />} />
+				<Route element={<IOBProviderElement />}>
+					<Route path="/socket-radio" element={<SocketRadio />} />
+					<Route path="/socket-tv" element={<SocketTV />} />
+				</Route>
+				<Route element={<P2PProviderElement />}>
+					<Route path="/p2p-voice" element={<P2PVoice />} />
+					<Route path="/p2p-video" element={<P2PVideo />} />
+				</Route>
 			</Routes>
 		</div>
 		<Footer />
 	</HashRouter>
- );
+); */
+
+root.render(
+	<AppContextProvider>
+		<HashRouter basename={window.baseName}>
+			<Header />
+			<div className="p-2" style={{minHeight:250}}>
+				<Routes>
+					<Route path="/" element={<HomePage />} />
+					<Route path="/socket-radio" element={<SocketRadio />} />
+					<Route path="/socket-tv" element={<SocketTV />} />
+					<Route path="/p2p-voice" element={<P2PVoice />} />
+					<Route path="/p2p-video" element={<P2PVideo />} />
+				</Routes>
+			</div>
+			<Footer />
+		</HashRouter>
+	</AppContextProvider>
+);

@@ -2,22 +2,21 @@ import {useContext, useEffect} from "react";
 import { BsFillMicFill } from "react-icons/bs";
 import { BsMusicNoteList } from "react-icons/bs";
 
-import {P2PContext} from "../components/p2pContext";
 import {AnswerCallView, CallSomeBodyView} from "../views/callViews.jsx";
+import {AppContext} from "../components/appContext";
 
-let myVoice , coVoice , coStream ;
-let startStreaming ;
+let coStream ;
 let playStreaming ;
 let playContactStream ;
 
 const P2PVoice = () => {
 
-    const { name , setName , number , setNumber ,
-        startMic , stream , setStream , contactStream ,
-        contactFound , contactIO , contactId , callAccepted, callEnded , call } = useContext( P2PContext );
+    const { name , setName , number , stream , startMic , setStream , contactStream ,
+        contactFound , contactIO , contactId , callAccepted, callEnded , call } = useContext( AppContext );
 
-    if( contactStream )
-        coStream = contactStream ;
+    if( contactStream ) {
+        coStream = contactStream;
+    }
 
     let callStatus = contactId.length > 0 ? "Calling " + contactId : "" ;
     if( contactFound !== 0 ) // Search is done!
@@ -28,32 +27,22 @@ const P2PVoice = () => {
 
         //console.log( "useEffect Exec In Voice Call" );
 
-        startStreaming = () => {
-            //console.log( "starting mic stream" );
-            // View will refresh due to using setState
-            startMic( ( micStream ) => setStream( micStream ) );
-        }
-
         playStreaming = ( micStream ) => {
             //console.log( "playing mic stream" );
-            myVoice = document.getElementById( 'myVoice' );
-            myVoice.srcObject = micStream ;
+            document.getElementById( 'myVoice' ).srcObject = micStream ;
         }
 
         playContactStream = () => {
-            coVoice = document.getElementById( 'contactStream' );
-            coVoice.srcObject = coStream ;
+            document.getElementById( 'contactStream' ).srcObject = coStream ;
         }
 
-        if( ! number )
-            setNumber( window.getNumber() );
 
     }, []);
 
     if( name && name.length > 0 ){
-        if( stream )
-            setTimeout(() => playStreaming( stream ) , 500);
-        else startStreaming();
+        if( ! stream )
+            startMic( ( newStream ) => setStream( newStream ) );
+        else setTimeout(() => playStreaming( stream ) , 500);
     }
 
     const saveName = () => {
@@ -77,21 +66,17 @@ const P2PVoice = () => {
 
     const MyAudioStream = () => {
         return (
-            <>
-                {stream ? (
-                    <div className="col-12">
-                        <h3 className="h5 mb-4">
-                            {name ? name : "No Name"}
-                        </h3>
-                        <audio muted autoPlay controls
-                               className="mb-4"
-                               id="myVoice"/>
-                        <h3 className="h5">
-                            Your Number : +98-{number}
-                        </h3>
-                    </div>
-                ) : "No stream! : something wrong with mic?"}
-            </>
+            <div className="col-12">
+                <h3 className="h5 mb-4">
+                    {name ? name : "No Name"}
+                </h3>
+                <audio muted autoPlay controls
+                    className="col-12 mb-4"
+                    id="myVoice"/>
+                <h3 className="h5">
+                    Your Number : +98-{number}
+                </h3>
+            </div>
         );
     }
 
@@ -103,7 +88,7 @@ const P2PVoice = () => {
                     {call.name ? call.name : "Contact Name"}
                 </h3>
                 <audio autoPlay controls
-                       className="mb-4"
+                       className="col-12 mb-4"
                        id="contactStream"/>
                 <h3 className="h5">
                     Contact : +98-{call.number}
@@ -124,14 +109,15 @@ const P2PVoice = () => {
                 <br/>
                 {!name ? <AskName /> : (
                 <div className="row">
-                    <div className="col-12 col-sm-6 p-3">
+                    <div className="col-12 col-sm-6 p-4">
                         <MyAudioStream />
                     </div>
-                    <div className="col-12 col-sm-6 p-3">
+                    <div className="col-12 col-sm-6 p-4">
                         {callAccepted && !callEnded ? <ContactAudioStream /> : (
                             <div className="col-12">
                                 {call.isReceivingCall && !callAccepted ?
-                                    <AnswerCallView /> : <CallSomeBodyView callInitialStatus={callStatus} />}
+                                    <AnswerCallView /> : <CallSomeBodyView
+                                            callInitialStatus={callStatus} />}
                             </div>
                         )}
                     </div>

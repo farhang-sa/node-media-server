@@ -1,11 +1,20 @@
 
 import {BsFillMicFill,BsMusicNoteList} from "react-icons/bs";
 import {BroadcastListeningView} from "../views/broadcastView.jsx";
+import {useContext, useEffect} from "react";
+import {AppContext} from "../components/appContext";
 
 const SocketRadio = () => {
 
-    const channel = "Channel_" + Date.now();
+    const { mySocketId , number , IOBContext } = useContext( AppContext );
+    const channel = "Channel_" + number ;
     const listeningStatus = "Not Listening";
+
+    useEffect(() => {
+
+        console.log("Radio Effect" );
+
+    }, []);
 
     return (
         <div className="row">
@@ -18,19 +27,19 @@ const SocketRadio = () => {
                 </h3>
                 <br/>
                 <div className="row">
-                    <div className="col-12 col-sm-6 p-3">
-                        <h5 className="h5">
+                    <div className="col-12 col-sm-6 p-4">
+                        <h5 className="h5 mb-4">
                             Host : {channel}
                         </h5>
-                        <div className="row pt-3 pb-4 ps-3 pe-3">
-                            <audio
-                                style={{borderRadius: 1}}
-                                className=""
-                                autoPlay
-                                controls/>
-                        </div>
+                        <audio style={{borderRadius: 1}}
+                           className="col-12 mb-4"
+                           autoPlay
+                           controls/>
+                        <h3 className="h5">
+                            Radio Actions
+                        </h3>
                     </div>
-                    <div className="col-12 col-sm-6 p-3">
+                    <div className="col-12 col-sm-6 p-4">
                         <BroadcastListeningView />
                     </div>
                 </div>

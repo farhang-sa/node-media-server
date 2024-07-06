@@ -1,10 +1,10 @@
 import {useContext} from "react";
-import {P2PContext} from "../components/p2pContext";
 import {BsTelephoneFill, BsTelephoneInbound} from "react-icons/bs";
+import {AppContext} from "../components/appContext";
 
 
-export const CallSomeBodyView = ({ callInitialStatus}) => {
-    const { callStatus, startCalling , setCallStatus , contactFound } = useContext( P2PContext );
+export const CallSomeBodyView = ({ callInitialStatus }) => {
+    const { callStatus, startCalling , setCallStatus , contactFound , setStream } = useContext( AppContext );
     callInitialStatus = callInitialStatus.length > 0 ? callInitialStatus : callStatus ;
 
     const initCall = () => {
@@ -21,7 +21,7 @@ export const CallSomeBodyView = ({ callInitialStatus}) => {
             setCallStatus( "Nice Try" );
             return ;
         } ContactNumber.attr( "disabled" , true );
-        startCalling( contact );
+        startCalling(contact);
     }
 
     if( contactFound === -1 )
@@ -34,11 +34,11 @@ export const CallSomeBodyView = ({ callInitialStatus}) => {
             </h5>
             <div className="row mb-4 pt-1 ps-2 pe-2">
                 <div className="input-group">
-                    <span className="input-group-text">+98-</span>
+                    <span className="input-group-text text-primary">+98-</span>
                     <input className="form-control form-control-lg"
                        type="tel" id="contact-number"
                        placeholder="Contact Number" />
-                    <span className="input-group-text"
+                    <span className="input-group-text btn btn-lg btn-success"
                           style={{cursor: "pointer"}}
                           onClick={() => initCall()}>
                         <BsTelephoneFill style={{width: '1em', height: '1em'}}/>
@@ -49,18 +49,23 @@ export const CallSomeBodyView = ({ callInitialStatus}) => {
         </>);
 }
 
-export const AnswerCallView = () => {
+export const AnswerCallView = ({ startStreaming }) => {
 
-    const { answerCall , call } = useContext( P2PContext );
+    const { answerCall , call , setStream } = useContext( AppContext );
+
+    const initAnswer = () => {
+        // start streaming my mic/cam
+        answerCall( call );
+    }
 
     return (
-        <div className="col-xs-12">
+        <>
             <h5 className="h5 mb-4">
                 {call.name} is calling
             </h5>
-            <button onClick={() => answerCall( call )}
+            <button onClick={() => initAnswer()}
                     className="btn btn-success btn-lg mb-4">
                 <BsTelephoneInbound style={{width: '1em', height: '1em'}}/>
             </button>
-        </div>);
+        </>);
 }

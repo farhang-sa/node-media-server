@@ -16,19 +16,19 @@ const SocketTV = () => {
                 </h3>
                 <br/>
                 <div className="row">
-                    <div className="col-12 col-sm-6 p-3">
-                        <h5 className="h5">
+                    <div className="col-12 col-sm-6 p-4">
+                        <h5 className="h5 mb-4">
                             Host : -----------
                         </h5>
-                        <div className="row pt-3 pb-4 ps-3 pe-3">
-                            <video
-                                style={{borderRadius: 1}}
-                                className="col-12"
-                                autoPlay
-                                controls/>
-                        </div>
+                        <video style={{borderRadius: 1}}
+                           className="col-12 mb-4"
+                           autoPlay
+                           controls/>
+                        <h3 className="h5">
+                            Tv Actions
+                        </h3>
                     </div>
-                    <div className="col-12 col-sm-6 p-3">
+                    <div className="col-12 col-sm-6 p-4">
                         <BroadcastListeningView/>
                     </div>
                 </div>

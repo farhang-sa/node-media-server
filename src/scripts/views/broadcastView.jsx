@@ -17,11 +17,11 @@ export const BroadcastListeningView = () => {
             </h5>
             <div className="row mb-4 pt-1 ps-2 pe-2">
                 <div className="input-group">
-                    <span className="input-group-text">Channel_</span>
+                    <span className="input-group-text text-primary">Channel_</span>
                     <input className="form-control form-control-lg"
                            type="tel" id="contact-number"
                            placeholder="Channel Id"/>
-                    <span className="input-group-text"
+                    <span className="input-group-text btn btn-lg btn-primary"
                           style={{cursor: "pointer"}}
                           onClick={() => startListening()}>
                         <BsHeadphones style={{width: '1.5em', height: '1.5em'}}/>

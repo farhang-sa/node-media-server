@@ -2,22 +2,21 @@ import { useContext, useEffect } from "react";
 import { BsCameraVideoFill } from "react-icons/bs";
 import { BsFillTvFill } from "react-icons/bs";
 
-import {P2PContext} from "../components/p2pContext";
 import {AnswerCallView, CallSomeBodyView} from "../views/callViews.jsx";
+import {AppContext} from "../components/appContext";
 
-let myVideo , coVideo , coStream ;
-let startStreaming ;
+let coStream ;
 let playStreaming ;
 let playContactStream ;
 
 const P2PVideo = () => {
 
-    const { name , setName , number , setNumber ,
-        startCam , stream , setStream , contactStream ,
-        contactFound , contactIO , contactId , callAccepted, callEnded , call } = useContext( P2PContext );
+    const { name , setName , number , stream , startCam , setStream , contactStream ,
+        contactFound , contactIO , contactId , callAccepted, callEnded , call } = useContext( AppContext );
 
-    if( contactStream )
+    if( contactStream ){
         coStream = contactStream ;
+    }
 
     let callStatus = contactId.length > 0 ? "Calling " + contactId : "" ;
     if( contactFound !== 0 ) // Search is done!
@@ -28,33 +27,24 @@ const P2PVideo = () => {
 
         //console.log( "useEffect Exec In Voice Call" );
 
-        startStreaming = () => {
-            //console.log( "starting cam stream" );
-            // View will refresh due to using setState
-            startCam( ( camStream ) => setStream( camStream ) );
-        }
-
         playStreaming = ( camStream ) => {
             //console.log( "playing cam stream" );
-            myVideo = document.getElementById( 'myVideo' );
-            myVideo.srcObject = camStream ;
+            document.getElementById( 'myVideo' ).srcObject = camStream ;
         }
 
         playContactStream = () => {
-            coVideo = document.getElementById( 'contactStream' );
-            coVideo.srcObject = coStream ;
+            document.getElementById( 'contactStream' ).srcObject = coStream ;
         }
 
-        if( ! number )
-            setNumber( window.getNumber() );
 
     }, []);
 
     if( name && name.length > 0 ){
-        if( stream )
-            setTimeout(() => playStreaming( stream ) , 500);
-        else startStreaming();
+        if( ! stream )
+            startCam( ( newStream ) => setStream( newStream ) );
+        else setTimeout(() => playStreaming( stream ) , 500);
     }
+
 
     const saveName = () => {
         // View will refresh due to using setStat
@@ -77,21 +67,17 @@ const P2PVideo = () => {
 
     const MyVideoStream = () => {
         return (
-            <>
-                {stream ? (
-                    <div className="col-12">
-                        <h3 className="h5 mb-4">
-                            {name ? name : "No Name"}
-                        </h3>
-                        <video muted autoPlay controls
-                               className="col-12 mb-4"
-                               id="myVideo"/>
-                        <h3 className="h5">
-                            Your Number : +98-{number}
-                        </h3>
-                    </div>
-                ) : "No stream! : something wrong with cam?"}
-            </>
+            <div className="col-12">
+                <h3 className="h5 mb-4">
+                    {name ? name : "No Name"}
+                </h3>
+                <video muted autoPlay controls
+                       className="col-12 mb-4"
+                       id="myVideo"/>
+                <h3 className="h5">
+                    Your Number : +98-{number}
+                </h3>
+            </div>
         );
     }
 
@@ -123,19 +109,20 @@ const P2PVideo = () => {
                 </h3>
                 <br/>
                 {!name ? <AskName /> : (
-                    <div className="row">
-                        <div className="col-12 col-sm-6 p-4">
-                            <MyVideoStream />
-                        </div>
-                        <div className="col-12 col-sm-6 p-4">
-                            {callAccepted && !callEnded ? <ContactVideoStream /> : (
-                                <div className="col-12">
-                                    {call.isReceivingCall && !callAccepted ?
-                                        <AnswerCallView /> : <CallSomeBodyView callInitialStatus={callStatus} />}
-                                </div>
-                            )}
-                        </div>
-                    </div> )}
+                <div className="row">
+                    <div className="col-12 col-sm-6 p-4">
+                        <MyVideoStream />
+                    </div>
+                    <div className="col-12 col-sm-6 p-4">
+                        {callAccepted && !callEnded ? <ContactVideoStream /> : (
+                            <div className="col-12">
+                                {call.isReceivingCall && !callAccepted ?
+                                    <AnswerCallView /> : <CallSomeBodyView
+                                            callInitialStatus={callStatus} />}
+                            </div>
+                        )}
+                    </div>
+                </div> )}
             </div>
             <div className="col-12 col-sm-1 col-md-2"></div>
         </div>
