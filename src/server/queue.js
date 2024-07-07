@@ -3,6 +3,8 @@ const { extname, join } = require( "path" );
 const { ffprobe } = require( "@dropb/ffprobe" );
 const ffprobeStatic = require( "ffprobe-static" );
 const stream = require( "stream" ) ;
+const Throttle = require("throttle");
+const {createReadStream} = require("node:fs");
 
 const PassThroughStream = stream.PassThrough ;
 ffprobe.path = ffprobeStatic.path;
@@ -121,5 +123,4 @@ class Queue {
     }
 }
 
-const queue = new Queue();
-export default queue;
+module.exports = Queue;

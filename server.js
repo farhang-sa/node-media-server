@@ -17,6 +17,7 @@ const hostname = process.env.IP
 const port = process.env.PORT || 3000;
 const path = require( 'path' );
 const fs = require( 'fs' );
+const Queue = require("./src/server/queue");
 const root = __dirname ;
 
 const SessionsSqliteStore = sqliteStoreFactory( Sessions );
@@ -69,15 +70,6 @@ express.get('/', (req, res) => {
     express.initUser( req , res );
     res.sendFile( path.join( root , './dist/index.html' ) );
 });
-express.post( '/io', (req, res) => {
-    express.initUser( req , res );
-    AppSqlite.addSocket( req.session.id , req.body.io , () => {
-        res.json({
-            "message" : "welcome : " + req.session.id ,
-            "socket" : req.body.io
-        });
-    });
-});
 
 // testing : session id => socket connection id
 express.get( '/io', (req, res) => {
@@ -120,51 +112,71 @@ const ioServer = socket( server , {
 });
 
 // Socket server magic :)
-ioServer.on( "connection" , (socket) => {
+ioServer.on( "connection" , (mSocket) => {
 
-    socket.on( "setSessionId" , ({ sid }) => {
+    mSocket.on( "setSessionId" , ({ sid }) => {
         // find my session - add/update
-        AppSqlite.addSocket( sid , socket.id , () => {});
+        AppSqlite.addSocket( sid , mSocket.id , '-' , () => {});
         // send back my new socket id
-        socket.emit( "setSocketId" , socket.id );
-        console.log( "new record : " + socket.id + " | " + sid );
+        mSocket.emit( "setSocketId" , mSocket.id );
     });
 
-    socket.on( "getContactIO" , ({ cid }) => {
-        AppSqlite.getSocketByPartial( cid , ( raw ) => {
+    mSocket.on( "getContactIO" , ({ contactId }) => {
+        AppSqlite.getSocketByPartial( contactId , ( raw ) => {
             if( raw ){ // Contact is online
-                socket.emit( "foundContactIO" , raw.io );
+                mSocket.emit( "foundContactIO" , raw.io );
             } else { // No contact found
-                socket.emit( "noContactIO" , cid );
+                mSocket.emit( "noContactIO" , contactId );
             }
         });
     });
 
     // p2p call functions
-    socket.on("disconnect", () => {
-        socket.broadcast.emit("callEnded")
+    mSocket.on("disconnect", () => {
+        mSocket.broadcast.emit("callEnded")
     });
-    socket.on("callUser", ({ userToCall, signalData, from, name , number }) => {
+    mSocket.on("callUser", ({ userToCall, signalData, from, name , number }) => {
         ioServer.to(userToCall).emit("callReceive", { signal: signalData, from , number , callerName : name });
     });
-    socket.on("answerCall", ({ signal , to , name , number , from }) => {
+    mSocket.on("answerCall", ({ signal , to , name , number , from }) => {
         ioServer.to(to).emit("callAccepted", { signal , from , cNumber : number , cName : name });
     });
 
     // radio/tv functions
-    socket.on( "radio_mic" , ( channelid ) =>{
-
+    let queue ;
+    mSocket.on( "host_init" , ( sid ) => {
+        // create new queue for this user ( host )
+        // queue = new Queue();
+        // update( remove / add ) socket user's row
+        AppSqlite.addSocket( sid , mSocket.id , 'hosting' , () => {});
     });
-    socket.on( "radio_audio" , ( channelid ) =>{
-
+    mSocket.on( "listener_join" , ({ sid , channel }) => {
+        // update( remove / add ) socket user's row
+        AppSqlite.addSocket( sid , mSocket.id , channel , () => {});
     });
-    socket.on( "tv_cam" , ( channelid ) =>{
-
+    mSocket.on("channel_bufferHeader", ({ channel , header }) => {
+        //queue.bufferHeader = header ;
+        AppSqlite.getSocketListeners( channel , ( rows ) => {
+            // send to each listener!
+            if( rows ) for( let row in rows ) {
+                //console.log( 'streaming header to : ' + rows[row].io );
+                mSocket.to(rows[row].io).emit('channel_bufferHeader', { header });
+            }
+        });
     });
-    socket.on( "tv_video" , ( channelid ) =>{
-
+    mSocket.on( "channel_stream" , ({ channel , data }) => {
+        AppSqlite.getSocketListeners( channel , ( rows ) => {
+            // send to each listener!
+            if( rows ) for( let row in rows ){
+                //console.log( 'streaming data to : ' + rows[row].io );
+                mSocket.to( rows[row].io ).emit( 'channel_stream' , { data });
+            }
+        });
     });
-
+    mSocket.on( 'listener_leave' , ({ sid }) => {
+        // update( remove / add ) socket user's row
+        AppSqlite.addSocket( sid , mSocket.id , '-' , () => {});
+    });
 });
 
 // for streaming radio/tv

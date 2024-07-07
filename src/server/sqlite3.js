@@ -20,13 +20,15 @@ class AppSqlite extends Sqlite3DataBase {
     constructor() {
         super("./sockets.db");
         //create sessions table
-        let co = "ssid VARCHAR(100) , io VARCHAR(100) , init VARCHAR(50)" ;
+        let co = "ssid VARCHAR(100) , io VARCHAR(100) , listening VARCHAR(100) , init VARCHAR(50)" ;
         let ct = "CREATE TABLE IF NOT EXISTS `sockets`( " + co + " );";
         this.db.exec( ct );
         this.removeExpiredSockets();
     }
 
-    addSocket(sessionId, socketId , callback ) {
+    addSocket(sessionId, socketId , listenChannel , callback ) {
+
+        listenChannel = listenChannel !== null ? listenChannel : '-';
 
         let init = util.getUIDStamp( sessionId ); // stamp
 
@@ -34,19 +36,26 @@ class AppSqlite extends Sqlite3DataBase {
         this.db.get( exist , ( err , raw ) => {
             //console.log( "new : " + sessionId + " | " + socketId );
             if( !raw ){ // Not Found
-                let sql = "INSERT INTO sockets( 'ssid' , 'io' , 'init' )";
-                sql += ` VALUES ( '${sessionId}' , '${socketId}' , '${init}' );` ;
+                console.log( "adding new raw : " , sessionId + " | " + socketId + " | " + listenChannel );
+                let sql = "INSERT INTO sockets( 'ssid' , 'io' , 'listening' , 'init' )";
+                sql += ` VALUES ( '${sessionId}' , '${socketId}' , '${listenChannel}' , '${init}' );` ;
                 this.db.exec( sql , () => callback && callback() );
             } else { // Exists!
                 //console.log( "old : " + raw.ssid + " | " + raw.io );
                 if( raw.io === socketId && raw.ssid !== sessionId )
                     // Some One Else Using This SocketId
                     this.destroySocket( raw.ssid ,
-                        () => this.addSocket( sessionId ,socketId ) );
+                        () => this.addSocket( sessionId ,socketId ,listenChannel , callback ) );
                 else if( raw.io !== socketId && raw.ssid === sessionId )
                     // Some One Else Using This SocketId
                     this.destroySocket( raw.ssid ,
-                        () => this.addSocket( sessionId ,socketId ) );
+                        () => this.addSocket( sessionId ,socketId ,listenChannel , callback ) );
+                else if( raw.listening !== listenChannel ){
+                    // console.log( "difference : " , raw.toLocaleString() , listenChannel  )
+                    // Some One Else Using This SocketId
+                    this.destroySocket( raw.ssid ,
+                        () => this.addSocket( sessionId ,socketId ,listenChannel , callback ) );
+                }
                 /** :)
                 else if( row.io === socketId && row.ssid === sessionId )
                     // Some One Else Using This SocketId
@@ -79,6 +88,19 @@ class AppSqlite extends Sqlite3DataBase {
             } else {
                 //console.log( row.data );
                 callback( row ) ;
+            }
+        });
+    }
+
+    getSocketListeners( channelId , callback ){
+        let query = `SELECT * FROM sockets WHERE listening='${channelId}'` ;
+        this.db.all( query , ( err , rows ) => {
+            if( err || !rows ){
+                //console.log( "Get Error : " + err );
+                callback( null );
+            } else {
+                //console.log( row.data );
+                callback( rows ) ;
             }
         });
     }

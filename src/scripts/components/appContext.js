@@ -1,5 +1,6 @@
 import {createContext, useState, useEffect, } from 'react';
 import Peer from 'simple-peer';
+import {AudioStreamer} from "jnaudiostream";
 
 const AppContext = createContext({});
 
@@ -21,9 +22,15 @@ const AppContextProvider = ({ children }) => {
     const [callEnded, setCallEnded] = useState(false);
     const [call, setCall] = useState({});
 
+    // IOB Stats
+    const [broadcastStatus , setBroadcastStatus ] = useState('-');
+    const [isRecording , setIsRecording ] = useState(false );
+    const [channel , setChannel ] = useState('' );
+    const [streamer , setStreamer ] = useState({} );
+
     useEffect(() => {
 
-        console.log("AppContextProvider Effect");
+        //console.log("AppContextProvider Effect");
 
         // Set MySocketId
         window.socket.on('setSocketId', ( id ) => {
@@ -38,6 +45,9 @@ const AppContextProvider = ({ children }) => {
         window.socket.on('callReceive', ({ from, callerName , number , signal }) => {
             setCall({ isReceivingCall: true, from , name: callerName , number , signal });
         });
+
+        // IOB Actions
+
 
     }, [] );
 
@@ -139,13 +149,37 @@ const AppContextProvider = ({ children }) => {
         window.location.reload();
     };
 
-    const allStates = { mySocketId , number , name , setName ,
+
+    /////////////////
+    /// IOB Functions
+    const initHosting = () => {
+        setBroadcastStatus( 'hosting' );
+        window.socket.emit( 'host_init',  window.getMySid() );
+    }
+
+    const initListening = ( newChannel ) => {
+        setBroadcastStatus( 'listening' );
+        setChannel( newChannel );
+        window.socket.emit( 'listener_join' , { sid : window.getMySid() , channel : newChannel } );
+    }
+
+    const leaveChannel = () => {
+        window.socket.emit( "listener_leave" , { sid : window.getMySid() } );
+    }
+
+    const allStates = { mySocketId , number ,
+        name , setName ,
         contactFound , setContactFound , contactId , setContactId ,
         contactIO , setContactIO , contactStream , setContactStream ,
-        stream , setStream , callStatus , setCallStatus , callAccepted ,
+        stream , setStream ,
+        callStatus , setCallStatus , callAccepted ,
         setCallAccepted , callEnded , setCallEnded , call , setCall ,
         startMic , startCam , stopStreaming ,
-        answerCall , leaveCall , callUser , startCalling };
+        answerCall , leaveCall , callUser , startCalling ,
+        broadcastStatus , setBroadcastStatus ,
+        isRecording , setIsRecording , channel , streamer , setStreamer ,
+        initHosting , initListening , leaveChannel
+    };
 
     return (
         <AppContext.Provider value={allStates}>
