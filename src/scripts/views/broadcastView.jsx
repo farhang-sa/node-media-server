@@ -1,7 +1,9 @@
 import {useContext, useEffect} from "react";
-import {BsFillMicFill ,BsPower , BsHeadphones , BsFillRecordCircleFill } from "react-icons/bs";
+import {BsFillMicFill, BsFillRecordCircleFill, BsHeadphones, BsPower} from "react-icons/bs";
 import {AudioRecorder, AudioStreamer} from "jnaudiostream";
-import { AppContext } from "../components/appContext";
+import {VideoRecorder} from "../components/farsavideorecorder";
+import {VideoStreamer} from "../components/farsavideostreamer";
+import {AppContext} from "../components/appContext";
 
 export const JoinChannelView = () => {
     const { broadcastStatus , initListening } = useContext(AppContext);
@@ -38,13 +40,13 @@ export const JoinChannelView = () => {
     );
 }
 
-let cStreamer ;
+let aStreamer ;
 export const ListeningView = () => {
     const { channel , leaveChannel , setBroadcastStatus } = useContext( AppContext );
 
     const initLeave = () => {
-        if( cStreamer )
-            cStreamer.stop();
+        if( aStreamer )
+            aStreamer.stop();
         leaveChannel();
         setBroadcastStatus( '-' );
     }
@@ -52,23 +54,23 @@ export const ListeningView = () => {
     useEffect(() => {
 
         // create streamer for listener
-        cStreamer = new AudioStreamer(100);
-        cStreamer.playStream();
+        aStreamer = new AudioStreamer(100);
+        aStreamer.playStream();
         window.socket.on("channel_bufferHeader", ({ header }) => {
-            if( ! cStreamer )
+            if( ! aStreamer )
                 return ;
-            if ( cStreamer.mediaBuffer )
+            if ( aStreamer.mediaBuffer )
                 return;
-            cStreamer.setBufferHeader( header );
+            aStreamer.setBufferHeader( header );
         });
 
         window.socket.on( 'channel_stream' , ({ data }) => {
-            console.log( 'streamer : ' + cStreamer );
-            if ( ! cStreamer )
+            console.log( 'streamer : ' + aStreamer );
+            if ( ! aStreamer )
                 return ;
-            if ( ! cStreamer.mediaBuffer )
+            if ( ! aStreamer.mediaBuffer )
                 return;
-            cStreamer.receiveBuffer( data );
+            aStreamer.receiveBuffer( data );
         });
 
     }, []);
@@ -93,22 +95,22 @@ export const ListeningView = () => {
     );
 }
 
-let recorder ;
-export const HostingControlsView = ({startStream}) => {
+let aRecorder ;
+export const RadioHostingControls = () => {
 
     const { isRecording , setIsRecording , leaveChannel , setBroadcastStatus , number } = useContext( AppContext );
 
     useEffect(() => {
 
         // create recorder for host
-        recorder = new AudioRecorder({}, 100); // 1ms
+        aRecorder = new AudioRecorder({}, 100); // 1ms
 
-        recorder.onReady = (packet) => {
+        aRecorder.onReady = (packet) => {
             console.log("Recording started!");
             console.log("Header size: " + packet.data.size + "bytes");
             window.socket.emit("channel_bufferHeader", { channel : number , header : packet } );
         };
-        recorder.onBuffer = (packet) => {
+        aRecorder.onBuffer = (packet) => {
             //console.log( "stream packet : " + packet );
             window.socket.emit("channel_stream", { channel : number , data : packet } );
         };
@@ -116,13 +118,13 @@ export const HostingControlsView = ({startStream}) => {
     }, []);
 
     const toggleStreaming = () => {
-        isRecording ? recorder.stopRecording() : recorder.startRecording();
+        isRecording ? aRecorder.stopRecording() : aRecorder.startRecording();
         setIsRecording( ! isRecording );
     }
 
     const stopStreaming = () => {
         setIsRecording( false )
-        recorder.stopRecording();
+        aRecorder.stopRecording();
         leaveChannel();
         setBroadcastStatus( '-' );
     }
@@ -137,6 +139,114 @@ export const HostingControlsView = ({startStream}) => {
             <span className="input-group-text btn btn-lg btn-danger"
                   onClick={() => stopStreaming()} style={{cursor: "pointer"}}>
                 <BsPower style={{width: '1.5em', height: '1.5em'}}/>
+            </span>
+        </>
+    );
+}
+
+
+let vStreamer ;
+export const WatchingView = () => {
+    const { channel , leaveChannel , setBroadcastStatus } = useContext( AppContext );
+
+    const initLeave = () => {
+        if( vStreamer )
+            vStreamer.stop();
+        leaveChannel();
+        setBroadcastStatus( '-' );
+    }
+
+    useEffect(() => {
+
+        // create streamer for listener
+        vStreamer = new VideoStreamer( document.getElementById('channel_stream') );
+        vStreamer.playStream();
+
+        /*window.socket.on("channel_bufferHeader", ({ header }) => {
+            if( ! vStreamer )
+                return ;
+            if ( vStreamer.mediaBuffer )
+                return;
+            vStreamer.setBufferHeader( header );
+        });*/
+
+        window.socket.on( 'channel_stream_stop' , () => {
+            // reset and wait for new stream!
+            vStreamer = new VideoStreamer( document.getElementById('channel_stream') );
+        });
+
+        window.socket.on( 'channel_stream' , ({ data }) => {
+            if ( ! vStreamer )
+                return ;
+            /*console.log( 'buffer : ' + vStreamer.mediaBuffer );
+            if ( ! vStreamer.mediaBuffer )
+                return;*/
+            vStreamer.receiveBuffer( data );
+        });
+
+    }, []);
+
+    const listeningStatus = 'Channel : ' + channel ;
+
+    return (
+        <>
+            <h5 className="h5 mb-4">
+                Listening
+            </h5>
+            <div className="col-12 mb-4 pt-1 ps-2 pe-0">
+                <video className="col-12 mb-2"
+                       id="channel_stream" controls autoPlay />
+                <span className="btn btn-lg btn-danger"
+                      style={{cursor: "pointer",color:"black"}} onClick={() => initLeave()}>
+                    <BsPower style={{width: '1.5em', height: '1.5em',color:"white"}}/>
+                </span>
+            </div>
+            <h3 className="h5 mb-4">{listeningStatus}</h3>
+        </>
+    );
+}
+
+let vRecorder ;
+export const TvHostingControls = () => {
+
+    const { isRecording , setIsRecording , leaveChannel , setBroadcastStatus , number } = useContext( AppContext );
+
+    useEffect(() => {
+
+        let tag = document.getElementById( 'previewVideoTag' );
+        vRecorder = new VideoRecorder( null , tag );
+        vRecorder.onData = ( packet ) => {
+            window.socket.emit("channel_stream", { channel : number , data : packet } );
+        }
+
+    }, []);
+
+    const toggleStreaming = () => {
+        isRecording ? vRecorder.stopRecording() : vRecorder.startRecording();
+        setIsRecording( ! isRecording );
+        window.socket.emit( 'channel_stream_stop' , { channel : number } );
+    }
+
+    const stopStreaming = () => {
+        setIsRecording( false )
+        vRecorder.stopRecording();
+        leaveChannel();
+        setBroadcastStatus( '-' );
+        window.socket.emit( 'channel_stream_stop' , { channel : number } );
+    }
+
+    const iconsStyles = {width: '1.5em', height: '1.5em' , borderRadius:0};
+
+    return (
+        <>
+            <span className="btn btn-lg btn-primary"
+                  onClick={() => toggleStreaming()} style={{cursor: "pointer"}}>
+                {isRecording ? <BsFillRecordCircleFill style={iconsStyles}/> :
+                    <BsFillMicFill style={iconsStyles}/>}
+            </span>
+            <span className="btn btn-lg btn-danger"
+                  onClick={() => stopStreaming()} style={{cursor: "pointer"}}>
+                <BsPower style={iconsStyles}/>
             </span>
         </>
     );

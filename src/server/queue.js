@@ -3,7 +3,7 @@ const { extname, join } = require( "path" );
 const { ffprobe } = require( "@dropb/ffprobe" );
 const ffprobeStatic = require( "ffprobe-static" );
 const stream = require( "stream" ) ;
-const Throttle = require("throttle");
+//const Throttle = require("throttle");
 const {createReadStream} = require("node:fs");
 
 const PassThroughStream = stream.PassThrough ;

@@ -13,7 +13,7 @@ const AppSqlite = require( "./src/server/sqlite3.js" );
 // Variables
 const hostname = process.env.IP
     || '192.168.1.5' ; // IP On My Home Network
-    //|| '192.168.99.174' ; // IP On My Phone Hotspot
+    //|| '192.168.22.174' ; // IP On My Phone Hotspot
 const port = process.env.PORT || 3000;
 const path = require( 'path' );
 const fs = require( 'fs' );
@@ -96,8 +96,8 @@ express.get( '/io', (req, res) => {
 // Certificate & Key created according to this answer on Stackoverflow :
 // https://stackoverflow.com/questions/23001643/how-to-use-https-with-node-js
 let httpsOptions = {
-    key  : fs.readFileSync( path.join( root , 'server-cert.key') ) ,
-    cert : fs.readFileSync( path.join( root , 'server-cert.crt') )
+    key  : fs.readFileSync( path.join( root , 'http-cert.key') ) ,
+    cert : fs.readFileSync( path.join( root , 'http-cert.crt') )
 };
 
 // Https server ( express as middleware )
@@ -170,6 +170,15 @@ ioServer.on( "connection" , (mSocket) => {
             if( rows ) for( let row in rows ){
                 //console.log( 'streaming data to : ' + rows[row].io );
                 mSocket.to( rows[row].io ).emit( 'channel_stream' , { data });
+            }
+        });
+    });
+    mSocket.on( 'channel_stream_stop' , ({ channel }) => {
+        AppSqlite.getSocketListeners( channel , ( rows ) => {
+            // send to each listener!
+            if( rows ) for( let row in rows ){
+                //console.log( 'streaming data to : ' + rows[row].io );
+                mSocket.to( rows[row].io ).emit( 'channel_stream_stop' );
             }
         });
     });

@@ -11,10 +11,12 @@
 *.db
 
 # ssl
-server-cert.crt
-server-cert.key
+http-cert.crt
+http-cert.key
 *.crt
 *.key
+/http-cert.key
+/http-cert.crt
 
 *.LICENSE.txt
 

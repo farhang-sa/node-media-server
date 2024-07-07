@@ -110,7 +110,7 @@ const AppContextProvider = ({ children }) => {
             setContactIO( '' );
             setContactFound( -1 );
         });
-        window.socket.emit( 'getContactIO'  , { cid : contactNumber });
+        window.socket.emit( 'getContactIO'  , { contactId : contactNumber });
     }
 
     const answerCall = ( call ) => {

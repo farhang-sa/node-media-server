@@ -1,13 +1,13 @@
 
 import {BsFillMicFill ,BsMusicNoteList , BsFillMicMuteFill, BsHeadset } from "react-icons/bs";
-import {ListeningView, HostingControlsView, JoinChannelView} from "../views/broadcastView.jsx";
+import {ListeningView, RadioHostingControls, JoinChannelView} from "../views/broadcastView.jsx";
 import {useContext, useEffect} from "react";
 import {AppContext} from "../components/appContext";
 import {AudioStreamer} from "jnaudiostream";
 
 const SocketRadio = () => {
 
-    const { number , broadcastStatus , initHosting , startMic } = useContext( AppContext );
+    const { number , broadcastStatus , initHosting } = useContext( AppContext );
     const channel = "Channel_" + number ;
 
     useEffect(() => {
@@ -39,7 +39,7 @@ const SocketRadio = () => {
                                        autoPlay
                                        controls/>
                                 {broadcastStatus === 'hosting' ?
-                                (<HostingControlsView startStream={startMic}/> ) :
+                                (<RadioHostingControls /> ) :
                                 (<span className="col-4 input-group-text btn btn-lg btn-primary"
                                        onClick={() => initHosting()}>
                                     <BsHeadset style={{width:'1.5em', height: '1.5em'}} />
