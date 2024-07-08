@@ -35,6 +35,7 @@ const SocketRadio = () => {
                             {broadcastStatus !== 'listening' &&
                             <div className="col-12 input-group mb-4 me-0 ms-0 pe-0 ps-0">
                                 <audio style={{borderRadius: 1}}
+                                       id='radio_host_player'
                                        className="col-8 input-group-text"
                                        autoPlay
                                        controls/>

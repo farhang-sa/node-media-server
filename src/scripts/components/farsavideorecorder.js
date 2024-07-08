@@ -1,3 +1,4 @@
+import {VideoStreamer} from "./farsavideostreamer";
 
 export class VideoRecorder {
 
@@ -88,6 +89,12 @@ export class VideoRecorder {
         // clean all
         this.stream = null ;
         this.recorder = null ;
+    }
+
+    recordFromFile( buffer ){
+        const streamer = new VideoStreamer( this.videoElement );
+        streamer.playStream();
+        streamer.receiveBuffer( buffer );
     }
 
 }

@@ -13,7 +13,7 @@ import SocketTV from "./socket/socketTv.jsx";
 import P2PVideo from "./p2p/p2pVideo.jsx";
 import P2PVoice from "./p2p/p2pVoice.jsx";
 import {AppContextProvider} from "./components/appContext";
-import {hostname, port} from "./components/hostPort";
+import { hostname, port} from "../hostPort";
 
 window.$ = $ ;
 window.React = React;

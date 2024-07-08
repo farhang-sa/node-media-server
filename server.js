@@ -11,10 +11,7 @@ const util = require( "./src/server/util.js" );
 const AppSqlite = require( "./src/server/sqlite3.js" );
 
 // Variables
-const hostname = process.env.IP
-    || '192.168.1.5' ; // IP On My Home Network
-    //|| '192.168.22.174' ; // IP On My Phone Hotspot
-const port = process.env.PORT || 3000;
+const { hostname , port } = require( './src/hostPort.js' );
 const path = require( 'path' );
 const fs = require( 'fs' );
 const Queue = require("./src/server/queue");

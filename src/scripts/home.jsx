@@ -1,5 +1,5 @@
 import {io} from "socket.io-client";
-import {hostname, port} from "./components/hostPort";
+import {hostname, port} from "../hostPort";
 
 const HomePage = ( props ) => {
 

@@ -1,6 +1,7 @@
 import {useContext, useEffect} from "react";
-import {BsFillMicFill, BsFillRecordCircleFill, BsHeadphones, BsPower} from "react-icons/bs";
-import {AudioRecorder, AudioStreamer} from "jnaudiostream";
+import {BsFillMicFill, BsFillRecordCircleFill, BsHeadphones, BsPower, BsFillMusicPlayerFill } from "react-icons/bs";
+import {AudioRecorder} from "../components/farsaaudiorecorder";
+import {AudioStreamer} from "../components/farsaaudiostreamer";
 import {VideoRecorder} from "../components/farsavideorecorder";
 import {VideoStreamer} from "../components/farsavideostreamer";
 import {AppContext} from "../components/appContext";
@@ -98,7 +99,7 @@ export const ListeningView = () => {
 let aRecorder ;
 export const RadioHostingControls = () => {
 
-    const { isRecording , setIsRecording , leaveChannel , setBroadcastStatus , number } = useContext( AppContext );
+    const {isRecording, setIsRecording, leaveChannel, setBroadcastStatus, number} = useContext(AppContext);
 
     useEffect(() => {
 
@@ -108,26 +109,44 @@ export const RadioHostingControls = () => {
         aRecorder.onReady = (packet) => {
             console.log("Recording started!");
             console.log("Header size: " + packet.data.size + "bytes");
-            window.socket.emit("channel_bufferHeader", { channel : number , header : packet } );
+            window.socket.emit("channel_bufferHeader", {channel: number, header: packet});
         };
         aRecorder.onBuffer = (packet) => {
             //console.log( "stream packet : " + packet );
-            window.socket.emit("channel_stream", { channel : number , data : packet } );
+            window.socket.emit("channel_stream", {channel: number, data: packet});
         };
 
     }, []);
 
     const toggleStreaming = () => {
         isRecording ? aRecorder.stopRecording() : aRecorder.startRecording();
-        setIsRecording( ! isRecording );
+        setIsRecording(!isRecording);
+    }
+
+    const streamMusic = (event) => {
+        let file = event.target.files[0];
+        console.log(file);
+        let reader = new FileReader();
+        reader.onload = (e) => {
+            let audioTag = document.getElementById('radio_host_player');
+            aRecorder.recordFromBuffer(e.target.result, audioTag);
+        };
+        reader.readAsArrayBuffer(file);
     }
 
     const stopStreaming = () => {
-        setIsRecording( false )
+        setIsRecording(false)
         aRecorder.stopRecording();
         leaveChannel();
-        setBroadcastStatus( '-' );
+        setBroadcastStatus('-');
     }
+
+    const fileSharingDisplay = false ;
+    const DisplayFileStreaming = () =>
+        <span className="input-group-text btn btn-lg btn-primary"
+            onClick={() => $('#musicFileSelector').click()} style={{cursor: "pointer"}}>
+            <BsFillMusicPlayerFill style={{width: '1.5em', height: '1.5em'}}/>
+        </span>
 
     return (
         <>
@@ -136,24 +155,27 @@ export const RadioHostingControls = () => {
                 {isRecording ? <BsFillRecordCircleFill style={{width: '1.5em', height: '1.5em'}}/> :
                     <BsFillMicFill style={{width: '1.5em', height: '1.5em'}}/>}
             </span>
+            {fileSharingDisplay && <DisplayFileStreaming />}
             <span className="input-group-text btn btn-lg btn-danger"
                   onClick={() => stopStreaming()} style={{cursor: "pointer"}}>
                 <BsPower style={{width: '1.5em', height: '1.5em'}}/>
             </span>
+            <input type="file" onChange={(e) => streamMusic(e)}
+                   className="hidden" id="musicFileSelector" accept=".mp3,.wav,.ogg"/>
         </>
     );
 }
 
 
-let vStreamer ;
+let vStreamer;
 export const WatchingView = () => {
-    const { channel , leaveChannel , setBroadcastStatus } = useContext( AppContext );
+    const {channel, leaveChannel, setBroadcastStatus} = useContext(AppContext);
 
     const initLeave = () => {
-        if( vStreamer )
+        if (vStreamer)
             vStreamer.stop();
         leaveChannel();
-        setBroadcastStatus( '-' );
+        setBroadcastStatus('-');
     }
 
     useEffect(() => {
